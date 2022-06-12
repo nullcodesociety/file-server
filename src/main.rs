@@ -13,8 +13,6 @@ mod prelude {
     pub use crate::request::*;
     pub use crate::response::*;
     pub use crate::resource::*;
-
-
 }
 
 use prelude::*;
