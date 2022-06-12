@@ -11,10 +11,10 @@ use serde::{Deserialize};
 
 // IpAddr::V4(Ipv4Addr::from_str(conf.host() ))
 
-pub fn from_env_args( args: env::Args ) -> Result<Config, ConfigError>
+pub fn from( env_args: env::Args ) -> Result<Config, ConfigError>
 {
     // get json config
-    let config_file = match args.nth(1) {
+    let config_file = match env_args.nth(1) {
         Some(a) => a,
         None => return println!("no config params were found"),
     };
