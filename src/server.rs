@@ -1,57 +1,47 @@
-use crate::config::Config;
+use crate::prelude::*;
 
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::convert::Infallible;
 use std::future::Future;
-use std::path::PathBuf;
+use std::convert::Infallible;
+use hyper::{Body, Request, Response, Server};
+use hyper::server::conn::AddrIncoming;
 
 use hyper::service::{make_service_fn, service_fn};
 
-use file_request;
+pub async fn start(conf: Config) -> Result<String, String> {
 
-pub fn start(conf: Config) {
-    let service = make_service_fn(|_| {
+    // We have to clone to mke the conf avaiable within the make service closure
+    // an then again per thread.
+    let service_conf = conf.clone();
 
-        // Clone the config so that it is only parsed once
-        // but can be used in each handler safely
-        let conf = conf.clone();
+    let service = make_service_fn(move |_| {
 
+        // Per thread clone here.
+        let service_conf = service_conf.clone();
         async {
             Ok::<_, Infallible>(service_fn(move |raw_req| {
                 handle_request(
-                    conf,
-                    raw_req
+                    service_conf.clone(), // fucking clone everything!!!
+                    raw_req,
                 )
             }))
         }
     });
 
-    let addr = SocketAddr::new(conf.ip, conf.port);
+    println!("Starting server at: {:?}", &conf.addr().to_string());
 
-    hyper::Server::bind(&addr).serve(service);
+    let s = hyper::Server::bind(&conf.addr()).serve(service);
+
+    match s.await {
+        Ok(_) => Ok(String::from("")),
+        Err(e) => Err(e.to_string())
+    }
 }
 
-
-fn handle_request<T>(conf: Config, req: hyper::Request<T>) {
-
-    // Get a file request from the config and requested data
-
-    // If we can get the file and we can load it ok
-
-    // Provide a server error
-
-    let handled_response = response(&config, &_req);
-
-    if let Ok(response) = serve_file_response( handled_response ).await {
-        return Ok(response);
-    }
-
-    let fallback_response = server_error_response(&config);
-
-    if let Ok(response) = serve_file_response( fallback_response ).await {
-        return Ok(response)
-    }
-
+async fn handle_request(conf: Config, req: hyper::Request<hyper::Body>)
+                        -> Result<hyper::Response<hyper::Body>, Infallible> {
     Ok(error_response())
 }
 
+fn error_response() -> hyper::Response<hyper::Body> {
+    hyper::Response::new(hyper::Body::from("Hello World"))
+}
