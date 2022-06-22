@@ -39,9 +39,9 @@ pub async fn start(conf: Config) -> Result<String, String> {
 
 async fn handle_request(conf: Config, req: hyper::Request<hyper::Body>)
                         -> Result<hyper::Response<hyper::Body>, Infallible> {
-    Ok(error_response())
+    Ok(test_response())
 }
 
-fn error_response() -> hyper::Response<hyper::Body> {
+fn test_response() -> hyper::Response<hyper::Body> {
     hyper::Response::new(hyper::Body::from("Hello World"))
 }
