@@ -1,6 +1,8 @@
-mod config;
-mod server;
-// mod response;
+use file_server::{
+    config,
+    server,
+    resource
+};
 
 #[tokio::main]
 async fn main() {

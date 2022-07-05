@@ -155,7 +155,7 @@ async fn file_response_body(request_path: path::PathBuf) -> Result<Body, Error>
 {
     match File::open(&request_path).await {
         Ok(file) => {
-            let content_type = "TXT";
+            let content_type = crate::resource::content_type(&request_path);
             let stream = FramedRead::new(file, BytesCodec::new());
             Ok(Body::wrap_stream(stream))
         }
