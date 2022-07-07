@@ -1,6 +1,5 @@
-use std::path;
+use std::{io, path};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
 
 // File types
 pub mod audio;
@@ -11,7 +10,7 @@ pub mod streaming;
 pub mod video;
 pub mod text;
 
-// Directory/listing types
+// Directory/listing(index) types
 pub mod directory;
 
 // Future optimizations include providing earlier matches for
@@ -86,4 +85,28 @@ pub fn extension(request_path: &path::PathBuf) -> &str {
         }
         None => text::DEFAULT_EXT,
     }
+}
+
+/// Get the path for a given resource
+/// Directories will load their own indexes
+/// Resource root should have _a_ trailing slash suffix
+/// Requested path should have _no_ slash prefix
+pub fn path(
+    resource_root: path::PathBuf,
+    request_path: path::PathBuf,
+) -> Result<path::PathBuf, io::Error> {
+
+    let mut p = resource_root;
+
+    match request_path.strip_prefix("/") {
+        Ok(relative_request_path) => p.push(relative_request_path),
+        Err(_) => ()
+    };
+
+    if p.is_dir() {
+        p.push(directory::INDEX.clone())
+    }
+
+    p.canonicalize()?;
+    Ok(p)
 }

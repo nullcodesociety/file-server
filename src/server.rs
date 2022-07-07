@@ -36,7 +36,7 @@ pub async fn start(config: Config) -> Result<String, String> {
     });
 
     println!("Starting server at: {:?}", &config.addr().to_string());
-    println!("From : {:?}", &config.resource_root());
+    println!("Serving resources from : {:?}", &config.resource_root());
 
     let s = hyper::Server::bind(&config.addr())
         .serve(service);
@@ -51,6 +51,7 @@ async fn handle_request(
     resource_root: path::PathBuf,
     request: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>, Infallible> {
+
     // The result has to always be ok so we're going to move the
     // actually response generator to avoid redundant Result wrapping
     Ok(generate_response(resource_root, request).await)
@@ -61,11 +62,10 @@ async fn generate_response(
     request: hyper::Request<hyper::Body>,
 ) -> Response<Body> {
 
-    let request_path = request_path(request.uri().path());
+    let request_path = path::PathBuf::from( request.uri().path() );
+    println!("Request: {:?}", request_path);
 
-    println!("Request: {:?}", request.uri());
-
-    if let Ok(requested_resource_path) = file_response_path(
+    if let Ok(requested_resource_path) = crate::resource::path(
         resource_root.clone(),
         request_path.clone(),
     ) {
@@ -76,7 +76,10 @@ async fn generate_response(
     }
 
     let error_path = error_path("404");
-    if let Ok( error_resource_path )  = file_response_path(resource_root, error_path) {
+    if let Ok( error_resource_path )  = crate::resource::path(
+        resource_root,
+        error_path
+    ) {
         if let Ok(error_response) = file_response(error_resource_path).await {
             println!("  HANDLED ERROR  ");
             return error_response;
@@ -103,17 +106,6 @@ async fn file_response(requested_resource_path: path::PathBuf) -> Result<Respons
 }
 
 
-fn request_path(path: &str) -> path::PathBuf {
-    PathBuf::from(relative_path(path))
-}
-
-fn relative_path<'a>(path: &'a str) -> &'a str {
-    match path.strip_prefix("/") {
-        Some(path) => path,
-        None => path
-    }
-}
-
 fn error_path(error: &str) -> path::PathBuf {
     let mut path = PathBuf::from("error");
     path.with_file_name(error);
@@ -132,24 +124,6 @@ async fn prepare_response(
         .body(body)
         .unwrap()
 }
-
-fn file_response_path(
-    resource_root: PathBuf,
-    request_path: PathBuf,
-) -> Result<path::PathBuf, io::Error>
-{
-    let mut response_path = resource_root;
-    response_path.push(request_path);
-
-    if response_path.is_dir() {
-        response_path.push(path::PathBuf::from("index"));
-        response_path.set_extension("html");
-    }
-
-    response_path.canonicalize()?;
-    Ok(response_path)
-}
-
 
 async fn file_response_body(request_path: path::PathBuf) -> Result<Body, Error>
 {
