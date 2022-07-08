@@ -143,7 +143,10 @@ async fn file_response_body(request_path: path::PathBuf) -> Result<Body, ServerE
 {
     match File::open(&request_path).await {
         Ok(file) => {
-            let stream = FramedRead::new(file, BytesCodec::new());
+            let stream = FramedRead::new(
+                file,
+                BytesCodec::new()
+            );
             Ok(Body::wrap_stream(stream))
         }
         Err(e) => Err(ServerError::FileOpen(request_path))
