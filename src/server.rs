@@ -101,7 +101,7 @@ async fn file_response(
         Err(e) => return Err(e),
         Ok(body) => {
             let status_code = StatusCode::OK;
-            let content_type = "TXT";
+            let content_type = resource::content_type(&resource_path );
             let response = hyper::Response::builder()
                 .status(status_code)
                 .header(CONTENT_TYPE, content_type)
