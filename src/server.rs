@@ -71,14 +71,15 @@ async fn generate_response(
     resource_root: path::PathBuf,
     request_path: path::PathBuf,
 ) -> Response<Body> {
-    match file_response(resource_root.clone(), request_path).await {
+
+    match file_response(resource_root.clone(), request_path, StatusCode::OK).await {
         Ok(r) => {
             println!(" ↪ OK");
             r
         }
         Err(e) => {
             println!(" | Error");
-            match file_response(resource_root.clone(), error_path()).await {
+            match file_response(resource_root.clone(), error_path(), StatusCode::NOT_FOUND).await {
                 Ok(r) => {
                     println!(" ↪ Handled");
                     r
@@ -96,6 +97,7 @@ async fn generate_response(
 async fn file_response(
     resource_root: path::PathBuf,
     request_path: path::PathBuf,
+    status_code: StatusCode
 ) -> Result<Response<Body>, ServerError> {
     let resource_path = match resource::path(
         resource_root,
@@ -108,7 +110,6 @@ async fn file_response(
     match file_response_body(resource_path.clone()).await {
         Err(e) => return Err(e),
         Ok(body) => {
-            let status_code = StatusCode::OK;
             let content_type = resource::content_type(&resource_path);
             let response = hyper::Response::builder()
                 .status(status_code)
@@ -136,7 +137,11 @@ async fn file_response_body(request_path: path::PathBuf) -> Result<Body, ServerE
 
 
 fn failure_response() -> Response<Body> {
-    Response::new(Body::from("Server Error"))
+    hyper::Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from("Server Error"))
+        .unwrap()
+    // Unwrap is ok here because this should be ok and is not dynamic
 }
 
 
