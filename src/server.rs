@@ -133,12 +133,14 @@ fn failure_response() -> Response<Body> {
 }
 
 
-
-
-
-fn error_path() -> path::PathBuf {
-    let mut path = PathBuf::from("error");
-    path.with_file_name("404");
+/// ```
+/// use std::path;
+/// use file_server::server::error_path;
+/// assert_eq!(error_path(), path::PathBuf::from("/404.html"));
+/// ```
+pub fn error_path() -> path::PathBuf {
+    let mut path = PathBuf::from("/");
+    path.push("404");
     path.set_extension("html");
     path
 }

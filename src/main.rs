@@ -13,7 +13,7 @@ async fn main() {
 
     match server.await {
         Ok(_) => println!("Server started"),
-        Err(e) => eprintln!("server error: {}", e)
+        Err(e) => eprintln!("server .error: {}", e)
     }
 
 }
