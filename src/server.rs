@@ -74,22 +74,35 @@ async fn generate_response(
     request_path: path::PathBuf,
 ) -> Response<Body> {
 
-    match file_response(resource_root.clone(), request_path, StatusCode::OK).await {
+    match file_response(
+        resource_root.clone(),
+        request_path,
+        StatusCode::OK
+    ).await {
+
         Ok(r) => {
             println!(" ↪ OK");
             r
         }
         Err(e) => {
             println!(" | Error");
-            match file_response(resource_root.clone(), error_path(), StatusCode::NOT_FOUND).await {
+
+            match file_response(
+                resource_root.clone(),
+                error_path(),
+                StatusCode::NOT_FOUND
+            ).await {
+
                 Ok(r) => {
                     println!(" ↪ Handled");
                     r
                 }
+
                 Err(e) => {
                     println!(" ↪ Unhandled");
                     failure_response()
                 }
+
             }
         }
     }
