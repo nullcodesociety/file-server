@@ -21,12 +21,10 @@ enum ServerError {
 }
 
 
-pub async fn start( config: Config ) {
-
+pub async fn start(config: Config) {
     let c = config.clone();
 
     let service = make_service_fn(move |_| {
-
         let sc = c.clone();
 
         async {
@@ -53,7 +51,7 @@ pub async fn start( config: Config ) {
 
 async fn handle_request(
     resource_root: path::PathBuf,
-    request:  hyper::Request<hyper::Body>,
+    request: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>, Infallible> {
     let request_path = path::PathBuf::from(request.uri().path());
     println!("Request: {:?}", request_path);
@@ -71,28 +69,14 @@ async fn generate_response(
         request_path,
         StatusCode::OK,
     ).await {
-        Ok(r) => {
-            println!(" ↪ OK");
-            r
-        }
-        Err(e) => {
-            println!(" | Error");
-
-            match file_response(
-                resource_root,
-                error_path(),
-                StatusCode::NOT_FOUND,
-            ).await {
-                Ok(r) => {
-                    println!(" ↪ Handled");
-                    r
-                }
-
-                Err(e) => {
-                    println!(" ↪ Unhandled");
-                    failure_response()
-                }
-            }
+        Ok(r) => r,
+        Err(e) => match file_response(
+            resource_root,
+            error_path(),
+            StatusCode::NOT_FOUND,
+        ).await {
+            Ok(r) => r,
+            Err(e) => failure_response()
         }
     }
 }
