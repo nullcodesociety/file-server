@@ -25,7 +25,7 @@ enum ServerError {
 }
 
 
-pub async fn start(config: Config) -> Result<String, String> {
+pub async fn start(config: Config) {
 
     // We have to clone to make the conf available within the
     // make service closure and then again per thread.
@@ -48,12 +48,11 @@ pub async fn start(config: Config) -> Result<String, String> {
     println!("Starting server at: {:?}", &config.addr().to_string());
     println!("Serving resources from : {:?}", &config.resource_root());
 
-    let s = hyper::Server::bind(&config.addr())
-        .serve(service);
-
-    match s.await {
-        Ok(_) => Ok(String::from("")),
-        Err(e) => Err(e.to_string())
+    match hyper::Server::bind(&config.addr())
+        .serve(service)
+        .await {
+        Ok(_) => (),
+        Err(e) => println!("{:?}", e)
     }
 }
 
@@ -73,13 +72,11 @@ async fn generate_response(
     resource_root: path::PathBuf,
     request_path: path::PathBuf,
 ) -> Response<Body> {
-
     match file_response(
         resource_root.clone(),
         request_path,
-        StatusCode::OK
+        StatusCode::OK,
     ).await {
-
         Ok(r) => {
             println!(" ↪ OK");
             r
@@ -90,9 +87,8 @@ async fn generate_response(
             match file_response(
                 resource_root.clone(),
                 error_path(),
-                StatusCode::NOT_FOUND
+                StatusCode::NOT_FOUND,
             ).await {
-
                 Ok(r) => {
                     println!(" ↪ Handled");
                     r
@@ -102,7 +98,6 @@ async fn generate_response(
                     println!(" ↪ Unhandled");
                     failure_response()
                 }
-
             }
         }
     }
@@ -112,7 +107,7 @@ async fn generate_response(
 async fn file_response(
     resource_root: path::PathBuf,
     request_path: path::PathBuf,
-    status_code: StatusCode
+    status_code: StatusCode,
 ) -> Result<Response<Body>, ServerError> {
     let resource_path = match resource::path(
         resource_root,
@@ -145,7 +140,7 @@ async fn file_response_body(request_path: path::PathBuf) -> Result<Body, ServerE
         Ok(file) => {
             let stream = FramedRead::new(
                 file,
-                BytesCodec::new()
+                BytesCodec::new(),
             );
             Ok(Body::wrap_stream(stream))
         }
