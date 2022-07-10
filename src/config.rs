@@ -5,8 +5,8 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    resource_root: path::PathBuf,
-    addr: SocketAddr,
+    pub resource_root: path::PathBuf,
+    pub addr: SocketAddr,
 }
 
 impl Config {

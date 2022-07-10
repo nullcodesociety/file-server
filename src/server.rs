@@ -1,16 +1,12 @@
 use crate::config::{Config};
 use crate::resource;
 
-use std::future::Future;
 use std::convert::Infallible;
 use std::io;
-use std::io::Error;
 use std::path;
-use std::path::PathBuf;
 
-use hyper::{Body, Request, Response, Server, StatusCode};
+use hyper::{Body, Response, StatusCode};
 use hyper::header::CONTENT_TYPE;
-use hyper::server::conn::AddrIncoming;
 use hyper::service::{make_service_fn, service_fn};
 
 use tokio::fs::File;
@@ -25,30 +21,28 @@ enum ServerError {
 }
 
 
-pub async fn start(config: Config) {
+pub async fn start( config: Config ) {
 
-    // We have to clone to make the conf available within the
-    // make service closure and then again per thread.
-    let service_conf = config.clone();
+    let c = config.clone();
 
     let service = make_service_fn(move |_| {
 
-        // Per thread clone here.
-        let service_conf = service_conf.clone();
+        let sc = c.clone();
+
         async {
             Ok::<_, Infallible>(service_fn(move |raw_req| {
                 handle_request(
-                    service_conf.resource_root(),
+                    sc.resource_root.clone(),
                     raw_req,
                 )
             }))
         }
     });
 
-    println!("Starting server at: {:?}", &config.addr().to_string());
-    println!("Serving resources from : {:?}", &config.resource_root());
+    println!("Starting server at: {:?}", &config.addr.to_string());
+    println!("Serving resources from : {:?}", &config.resource_root);
 
-    match hyper::Server::bind(&config.addr())
+    match hyper::Server::bind(&config.addr)
         .serve(service)
         .await {
         Ok(_) => (),
@@ -59,21 +53,21 @@ pub async fn start(config: Config) {
 
 async fn handle_request(
     resource_root: path::PathBuf,
-    request: hyper::Request<hyper::Body>,
+    request:  hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>, Infallible> {
     let request_path = path::PathBuf::from(request.uri().path());
     println!("Request: {:?}", request_path);
 
-    Ok(generate_response(resource_root, request_path).await)
+    Ok(generate_response(&resource_root, request_path).await)
 }
 
 
 async fn generate_response(
-    resource_root: path::PathBuf,
+    resource_root: &path::PathBuf,
     request_path: path::PathBuf,
 ) -> Response<Body> {
     match file_response(
-        resource_root.clone(),
+        resource_root,
         request_path,
         StatusCode::OK,
     ).await {
@@ -85,7 +79,7 @@ async fn generate_response(
             println!(" | Error");
 
             match file_response(
-                resource_root.clone(),
+                resource_root,
                 error_path(),
                 StatusCode::NOT_FOUND,
             ).await {
@@ -105,7 +99,7 @@ async fn generate_response(
 
 
 async fn file_response(
-    resource_root: path::PathBuf,
+    resource_root: &path::PathBuf,
     request_path: path::PathBuf,
     status_code: StatusCode,
 ) -> Result<Response<Body>, ServerError> {
@@ -164,7 +158,7 @@ fn failure_response() -> Response<Body> {
 /// assert_eq!(error_path(), path::PathBuf::from("/404.html"));
 /// ```
 pub fn error_path() -> path::PathBuf {
-    let mut path = PathBuf::from("/");
+    let mut path = path::PathBuf::from("/");
     path.push("404");
     path.set_extension("html");
     path

@@ -1,5 +1,5 @@
 use std::{io, path};
-use lazy_static::lazy_static;
+use std::path::PathBuf;
 
 // File types
 pub mod audio;
@@ -92,11 +92,11 @@ pub fn extension(request_path: &path::PathBuf) -> &str {
 /// Resource root should have _a_ trailing slash suffix
 /// Requested path should have _no_ slash prefix
 pub fn path(
-    resource_root: path::PathBuf,
+    resource_root: &PathBuf,
     request_path: path::PathBuf,
 ) -> Result<path::PathBuf, io::Error> {
 
-    let mut p = resource_root;
+    let mut p = path::PathBuf::from(resource_root);
 
     match request_path.strip_prefix("/") {
         Ok(relative_request_path) => p.push(relative_request_path),
