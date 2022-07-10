@@ -1,7 +1,5 @@
 # File Server
-A simple webserver that servers resources 
-
-
+A simple webserver that servers files (resources). 
 
 ## Upcoming Features
 - Nice directory listing
