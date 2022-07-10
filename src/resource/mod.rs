@@ -1,5 +1,5 @@
-use std::{io, path};
 use std::path::PathBuf;
+use std::{io, path};
 
 // File types
 pub mod audio;
@@ -7,8 +7,8 @@ pub mod compressed;
 pub mod font;
 pub mod image;
 pub mod streaming;
-pub mod video;
 pub mod text;
+pub mod video;
 
 // Directory/listing(index) types
 pub mod directory;
@@ -77,12 +77,10 @@ pub fn content_type(request_path: &path::PathBuf) -> &str {
 /// ```
 pub fn extension(request_path: &path::PathBuf) -> &str {
     match request_path.extension() {
-        Some(ext) => {
-            match ext.to_str() {
-                Some(e) => e,
-                None => text::DEFAULT_EXT,
-            }
-        }
+        Some(ext) => match ext.to_str() {
+            Some(e) => e,
+            None => text::DEFAULT_EXT,
+        },
         None => text::DEFAULT_EXT,
     }
 }
@@ -95,12 +93,11 @@ pub fn path(
     resource_root: &PathBuf,
     request_path: path::PathBuf,
 ) -> Result<path::PathBuf, io::Error> {
-
     let mut p = path::PathBuf::from(resource_root);
 
     match request_path.strip_prefix("/") {
         Ok(relative_request_path) => p.push(relative_request_path),
-        Err(_) => ()
+        Err(_) => (),
     };
 
     if p.is_dir() {

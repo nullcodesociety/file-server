@@ -1,17 +1,16 @@
-use crate::config::{Config};
+use crate::config::Config;
 use crate::resource;
 
 use std::convert::Infallible;
 use std::io;
 use std::path;
 
-use hyper::{Body, Response, StatusCode};
 use hyper::header::CONTENT_TYPE;
 use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Response, StatusCode};
 
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
-
 
 #[derive(Debug)]
 enum ServerError {
@@ -19,7 +18,6 @@ enum ServerError {
     FileOpen(path::PathBuf),
     Response,
 }
-
 
 pub async fn start(config: Config) {
     let c = config.clone();
@@ -29,10 +27,7 @@ pub async fn start(config: Config) {
 
         async {
             Ok::<_, Infallible>(service_fn(move |raw_req| {
-                handle_request(
-                    sc.resource_root.clone(),
-                    raw_req,
-                )
+                handle_request(sc.resource_root.clone(), raw_req)
             }))
         }
     });
@@ -40,14 +35,11 @@ pub async fn start(config: Config) {
     println!("Starting server at: {:?}", &config.addr.to_string());
     println!("Serving resources from : {:?}", &config.resource_root);
 
-    match hyper::Server::bind(&config.addr)
-        .serve(service)
-        .await {
+    match hyper::Server::bind(&config.addr).serve(service).await {
         Ok(_) => (),
-        Err(e) => println!("{:?}", e)
+        Err(e) => println!("{:?}", e),
     }
 }
-
 
 async fn handle_request(
     resource_root: path::PathBuf,
@@ -59,40 +51,27 @@ async fn handle_request(
     Ok(generate_response(&resource_root, request_path).await)
 }
 
-
 async fn generate_response(
     resource_root: &path::PathBuf,
     request_path: path::PathBuf,
 ) -> Response<Body> {
-    match file_response(
-        resource_root,
-        request_path,
-        StatusCode::OK,
-    ).await {
+    match file_response(resource_root, request_path, StatusCode::OK).await {
         Ok(r) => r,
-        Err(e) => match file_response(
-            resource_root,
-            error_path(),
-            StatusCode::NOT_FOUND,
-        ).await {
+        Err(_) => match file_response(resource_root, error_path(), StatusCode::NOT_FOUND).await {
             Ok(r) => r,
-            Err(e) => failure_response()
-        }
+            Err(_) => failure_response(),
+        },
     }
 }
-
 
 async fn file_response(
     resource_root: &path::PathBuf,
     request_path: path::PathBuf,
     status_code: StatusCode,
 ) -> Result<Response<Body>, ServerError> {
-    let resource_path = match resource::path(
-        resource_root,
-        request_path,
-    ) {
+    let resource_path = match resource::path(resource_root, request_path) {
         Err(e) => return Err(ServerError::ResourcePath(e)),
-        Ok(r) => r
+        Ok(r) => r,
     };
 
     match file_response_body(resource_path.clone()).await {
@@ -105,27 +84,21 @@ async fn file_response(
                 .body(body);
             match response {
                 Ok(body) => Ok(body),
-                Err(_) => Err(ServerError::Response)
+                Err(_) => Err(ServerError::Response),
             }
         }
     }
 }
 
-
-async fn file_response_body(request_path: path::PathBuf) -> Result<Body, ServerError>
-{
+async fn file_response_body(request_path: path::PathBuf) -> Result<Body, ServerError> {
     match File::open(&request_path).await {
         Ok(file) => {
-            let stream = FramedRead::new(
-                file,
-                BytesCodec::new(),
-            );
+            let stream = FramedRead::new(file, BytesCodec::new());
             Ok(Body::wrap_stream(stream))
         }
-        Err(e) => Err(ServerError::FileOpen(request_path))
+        Err(_) => Err(ServerError::FileOpen(request_path)),
     }
 }
-
 
 fn failure_response() -> Response<Body> {
     hyper::Response::builder()
@@ -134,7 +107,6 @@ fn failure_response() -> Response<Body> {
         .unwrap()
     // Unwrap is ok here because this should be ok and is not dynamic
 }
-
 
 /// ```
 /// use std::path;

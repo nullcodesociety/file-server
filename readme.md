@@ -1,12 +1,8 @@
 # File Server
-A simple rust webserver that gets your resources online.
+A simple webserver that servers resources 
 
-Run the binary from the directory you'd like to host.
 
-## Features
-- Prevent serving of error responses by direct request
+
+## Upcoming Features
 - Nice directory listing
 - Single use download/access tokens with a password
-
-## Roadmap
-- Write proper documentation
